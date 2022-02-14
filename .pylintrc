@@ -1,0 +1,38 @@
+[TYPECHECK]
+
+generated-members=
+    torch.all,
+    torch.any,
+    torch.cat,
+    torch.count_nonzero,
+    torch.dist,
+    torch.empty,
+    torch.from_numpy,
+    torch.int,
+    torch.lerp,
+    torch.log,
+    torch.max,
+    torch.median,
+    torch.min,
+    torch.numel,
+    torch.ones_like,
+    torch.stack,
+    torch.topk,
+    torch.zeros
+
+[MESSAGES CONTROL]
+disable=
+    bad-continuation,
+    fixme,
+    too-few-public-methods 
+
+[MASTER]
+init-hook="from pylint.config import find_pylintrc; import os, sys; sys.path.append(os.path.dirname(find_pylintrc()))"
+
+[BASIC]
+argument-rgx=[a-z_][a-z0-9_]*
+attr-rgx=[a-z_][a-z0-9_]*
+class-attribute-rgx=[a-z_][a-z0-9_]*
+function-rgx=[a-z_][a-z0-9_]*
+method-rgx=[a-z_][a-z0-9_]*
+variable-rgx=[a-z_][a-z0-9_]*
