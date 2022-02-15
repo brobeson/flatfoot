@@ -45,15 +45,17 @@ Reference
 import argparse
 import json
 import os
-import sys
+
+# import sys
 import time
 import numpy
 import PIL.Image
 import got10k.experiments
 import experiments.command_line
-import modules.utils
-import tracking.gen_config
-import tracking.mdnet
+
+# import modules.utils
+# import tracking.gen_config
+# import tracking.mdnet
 
 
 def fill_command_line_parser(
@@ -80,7 +82,7 @@ def fill_command_line_parser(
     )
     parser.formatter_class = argparse.ArgumentDefaultsHelpFormatter
     parser.set_defaults(func=main)
-    experiments.command_line.add_tracker_name_parameter(parser)
+    experiments.command_line.add_tracker_parameter(parser)
     experiments.command_line.add_dataset_dir_parameter(parser, "~/Videos/otb")
     experiments.command_line.add_results_dir_parameter(parser)
     parser.add_argument(
@@ -170,36 +172,36 @@ class _ProgressBar:
         )
 
 
+# def _import_tracker(module_path: str) -> None:
+#     if not os.path.isfile(module_path):
+#         raise FileNotFoundError(f"Invalid path to the tracker module: {module_path}")
+#     sys.path.append(os.path.dirname(module_path))
+#     importlib.
 
-def _import_tracker(module_path: str) -> None:
-    if not os.path.isfile(module_path):
-        raise FileNotFoundError(f"Invalid path to the tracker module: {module_path}")
-    sys.path.append(os.path.dirname(module_path))
-    importlib.
 
 def _run_sequence(
     sequence_name: str, dataset: got10k.datasets.OTB, progress_bar: _ProgressBar
 ) -> None:
     # Ensure the random generators are seeded. This makes the study deterministic; if the test
     # fails, we KNOW it's from our code changes instead of randomness.
-    mdnet = tracking.mdnet.Mdnet(
-        tracking.mdnet.read_configuration("tracking/options.yaml")
-    )
-    mdnet.opts["random_seed"] = 0
+    # mdnet = tracking.mdnet.Mdnet(
+    #     tracking.mdnet.read_configuration("tracking/options.yaml")
+    # )
+    # mdnet.opts["random_seed"] = 0
     images, groundtruth = dataset[sequence_name]
     progress_bar.label = sequence_name
     progress_bar.maximum = len(images)
     print("Initializing", sequence_name, "on frame 0...", end="\r")
-    mdnet.initialize(_load_image(images[0]), groundtruth[0])
+    # mdnet.initialize(_load_image(images[0]), groundtruth[0])
     ious = numpy.zeros(len(images))
     frame_processing_times = numpy.zeros(len(images))
     ious[0] = 1.0
     for i, (image_file, gt) in enumerate(zip(images[1:], groundtruth[1:]), start=1):
         progress_bar.print(i)
         start_time = time.time()
-        target = mdnet.find_target(_load_image(image_file))
+        # target = mdnet.find_target(_load_image(image_file))
         frame_processing_times[i] = time.time() - start_time
-        ious[i] = modules.utils.overlap_ratio(target, gt)
+        # ious[i] = modules.utils.overlap_ratio(target, gt)
     progress_bar.print(progress_bar.maximum)
     print()
     return ious.mean(), frame_processing_times[1:].mean()

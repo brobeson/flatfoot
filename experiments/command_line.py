@@ -30,7 +30,31 @@ class PathSanitizer(argparse.Action):
         setattr(namespace, self.dest, os.path.abspath(os.path.expanduser(values)))
 
 
-def add_dataset_dir_parameter(parser: argparse.ArgumentParser, default: str) -> argparse.Action:
+def add_configuration_parameter(parser: argparse.ArgumentParser) -> argparse.Action:
+    """
+    Add the ``--configuration`` parameter to a command line parser.
+
+    This allows the user to specify a specific configuration for the flatfoot application.
+
+    Args:
+        parser (argparse.ArgumentParser): Add the parameter to this parser.
+
+    Returns:
+        argparse.Action: This function returns the :py:class:`argparse.Action` that represents the
+        command line parameter. The caller can tweak the action if necessary.
+    """
+    return parser.add_argument(
+        "--configuration",
+        help="Run flatfoot with this configuration. If you omit this argument, flatfoot looks for "
+        ".flatfoot, .flatfoot.yml, and .flatfoot.yaml in the current working directory. It uses "
+        "the first configuration file that it finds.",
+        action=PathSanitizer,
+    )
+
+
+def add_dataset_dir_parameter(
+    parser: argparse.ArgumentParser, default: str
+) -> argparse.Action:
     """
     Add the ``--dataset-dir`` parameter to a command line parser.
 
@@ -43,7 +67,7 @@ def add_dataset_dir_parameter(parser: argparse.ArgumentParser, default: str) -> 
 
     Returns:
         argparse.Action: This function returns the :py:class:`argparse.Action` that represents the
-        command line argument. The caller can tweak the action if necessary.
+        command line parameter. The caller can tweak the action if necessary.
     """
     return parser.add_argument(
         "--dataset-dir",
@@ -66,7 +90,7 @@ def add_results_dir_parameter(parser: argparse.ArgumentParser) -> argparse.Actio
 
     Returns:
         argparse.Action: This function returns the :py:class:`argparse.Action` that represents the
-        command line argument. The caller can tweak the action if necessary.
+        command line parameter. The caller can tweak the action if necessary.
     """
     return parser.add_argument(
         "--results-dir",
@@ -79,22 +103,24 @@ def add_results_dir_parameter(parser: argparse.ArgumentParser) -> argparse.Actio
     )
 
 
-def add_tracker_name_parameter(parser: argparse.ArgumentParser) -> argparse.Action:
+def add_tracker_parameter(parser: argparse.ArgumentParser) -> argparse.Action:
     """
-    Add the ``--tracker-name`` parameter to a command line parser.
+    Add the ``--tracker`` parameter to a command line parser.
 
-    This allows the user to select a specific tracker. The purpose of the tracker name depends on
-    the command.
+    This allows the user to select a specific tracker from the flatfoot configuration.
 
     Args:
         parser (argparse.ArgumentParser): Add the parameter to this parser.
 
     Returns:
         argparse.Action: This function returns the :py:class:`argparse.Action` that represents the
-        command line argument. The caller can tweak the action if necessary.
+        command line parameter. The caller can tweak the action if necessary.
     """
     return parser.add_argument(
-        "--tracker-name", help="Use this name for the tracker results.", default="MDNet"
+        "--tracker",
+        help="Use this tracker from the flatfoot configuration. This must be the 'class' property "
+        "of the tracker in the configuration file.",
+        default="MDNet",
     )
 
 
@@ -111,6 +137,16 @@ def print_information(*objects) -> None:
 def print_warning(*objects) -> None:
     """
     Print a warning message to the terminal using orange text.
+
+    Args:
+        objects: The data to print as a warning.
+    """
+    _print_message("\033[91m", *objects)
+
+
+def print_error(*objects) -> None:
+    """
+    Print an error message to the terminal using red text.
 
     Args:
         objects: The data to print as a warning.

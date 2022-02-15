@@ -1,0 +1,7 @@
+trackers:
+  - class: Tmft
+    path: ~/repositories/tmft/tracking/tmft.py
+
+benchmarks:
+  - name: OTB
+    path: ~/Videos/otb
