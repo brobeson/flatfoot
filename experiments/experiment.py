@@ -118,9 +118,10 @@ def main(arguments: argparse.Namespace) -> None:
     _list_trackers_and_benchmarks(
         arguments.list_trackers, arguments.list_benchmarks, config
     )
-    _import_tracker(config, arguments.tracker)
+    tracker = _import_tracker(config, arguments.tracker)
     experiments = _make_experiments(config.benchmarks)
-    # _run_tracker(experiments, arguments.tracker_name, arguments.slack_file)
+    for experiment in experiments:
+        _run_tracker(experiments, arguments.tracker_name, arguments.slack_file)
 
 
 def _load_configuration(user_file: str) -> configuration.Configuration:
@@ -150,6 +151,8 @@ def _list_trackers_and_benchmarks(
 def _import_tracker(
     flatfoot_configuration: configuration.Configuration, requested_tracker: str
 ) -> None:
+    # TODO Allow the user to specify custom tracker __init__() arguments.
+    # TODO Allow the user to set the tracker's name.
     if not flatfoot_configuration.trackers:
         command_line.print_error(
             "There are no trackers defined in the flatfoot configuration."
@@ -167,7 +170,9 @@ def _import_tracker(
             tracker_to_import = flatfoot_configuration.trackers[0]
     sys.path.append(tracker_to_import.path)
     try:
-        importlib.import_module(tracker_to_import.module)
+        module = importlib.import_module(tracker_to_import.module)
+        tracker = getattr(module, tracker_to_import.class_name)()
+        return tracker
     except ModuleNotFoundError as error:
         command_line.print_error(error.msg)
         command_line.print_error(
@@ -254,7 +259,7 @@ def _make_experiments(benchmarks: list) -> list:
     return experiments
 
 
-def _run_tracker(experiment, tracker_name: str, slack_file: str) -> None:
+def _run_tracker(experiment, tracker) -> None:
     """
     Run an experiment based on the GOT-10k toolkit.
 
@@ -265,20 +270,12 @@ def _run_tracker(experiment, tracker_name: str, slack_file: str) -> None:
             notifications are used.
     """
     # notifier = _make_notifier(slack_file, sys.platform)
-    # tracker = _Got10kMdnet(
-    #     tracking.mdnet.Mdnet(
-    #         tracking.mdnet.read_configuration(
-    #             os.path.expanduser("~/repositories/py-MDNet/tracking/options.yaml")
-    #         )
-    #     ),
-    #     name=tracker_name,
-    # )
     # notifier.send_message(
     #     f"Starting {tracker_name} {str(experiment.dataset.version)} experiment at "
     #     f"{datetime.datetime.today().isoformat(sep=' ', timespec='minutes')}"
     # )
     # try:
-    #     experiment.run(tracker)
+    experiment.run(tracker)
     # except Exception as error:  # pylint: disable=broad-except
     #     notifier.send_message(f"Error during experiment: '{str(error)}'")
     # else:

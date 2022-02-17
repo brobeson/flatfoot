@@ -1,5 +1,5 @@
 trackers:
-  - class: Tmft
+  - class: Got10kTmft
     path: ~/repositories/tmft/tmft.py
 
 benchmarks:
