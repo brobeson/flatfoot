@@ -80,6 +80,8 @@ def fill_command_line_parser(parser: argparse.ArgumentParser) -> argparse.Namesp
     parser.set_defaults(func=main)
     command_line.add_configuration_parameter(parser)
     command_line.add_tracker_parameter(parser)
+    command_line.add_list_trackers_parameter(parser)
+    command_line.add_list_benchmarks_parameter(parser)
     # command_line.add_dataset_dir_parameter(parser, "~/Videos")
     # command_line.add_results_dir_parameter(parser)
     # parser.add_argument(
@@ -113,6 +115,9 @@ def main(arguments: argparse.Namespace) -> None:
             and ``results_dir``.
     """
     config = _load_configuration(arguments.configuration)
+    _list_trackers_and_benchmarks(
+        arguments.list_trackers, arguments.list_benchmarks, config
+    )
     _import_tracker(config, arguments.tracker)
     return
     experiment = _make_experiment(arguments)
@@ -130,6 +135,17 @@ def _load_configuration(user_file: str) -> configuration.Configuration:
             "The required key", error.args[0], "is missing from the configuration."
         )
         sys.exit(1)
+
+
+def _list_trackers_and_benchmarks(
+    list_trackers: bool, list_benchmarks: bool, config: configuration.Configuration
+) -> None:
+    if list_trackers or list_benchmarks:
+        if list_trackers:
+            configuration.list_trackers(config.trackers)
+        if list_benchmarks:
+            configuration.list_benchmarks(config.benchmarks)
+        sys.exit(0)
 
 
 def _import_tracker(

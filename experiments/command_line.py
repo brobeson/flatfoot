@@ -124,6 +124,46 @@ def add_tracker_parameter(parser: argparse.ArgumentParser) -> argparse.Action:
     )
 
 
+def add_list_trackers_parameter(parser: argparse.ArgumentParser) -> argparse.Action:
+    """
+    Add the ``--list-trackers`` parameter to a command line parser.
+
+    This allows the user to list the trackers defined in the flatfoot configuration.
+
+    Args:
+        parser (argparse.ArgumentParser): Add the parameter to this parser.
+
+    Returns:
+        argparse.Action: This function returns the :py:class:`argparse.Action` that represents the
+        command line parameter. The caller can tweak the action if necessary.
+    """
+    return parser.add_argument(
+        "--list-trackers",
+        help="List the trackers in the flatfoot configuration, then exit.",
+        action="store_true",
+    )
+
+
+def add_list_benchmarks_parameter(parser: argparse.ArgumentParser) -> argparse.Action:
+    """
+    Add the ``--list-benchmarks`` parameter to a command line parser.
+
+    This allows the user to list the benchmarks defined in the flatfoot configuration.
+
+    Args:
+        parser (argparse.ArgumentParser): Add the parameter to this parser.
+
+    Returns:
+        argparse.Action: This function returns the :py:class:`argparse.Action` that represents the
+        command line parameter. The caller can tweak the action if necessary.
+    """
+    return parser.add_argument(
+        "--list-benchmarks",
+        help="List the benchmarks in the flatfoot configuration, then exit.",
+        action="store_true",
+    )
+
+
 def print_information(*objects) -> None:
     """
     Print an information message to the terminal using blue text.

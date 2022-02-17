@@ -21,6 +21,10 @@ class Tracker:
         self.path = os.path.dirname(module_path)
         self.module = os.path.splitext(os.path.basename(module_path))[0]
 
+    @property
+    def full_path(self) -> str:
+        return os.path.join(self.path, f"{self.module}.py")
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, str):
             return self.class_name == other
@@ -94,3 +98,25 @@ def _parse_benchmarks_from_yaml(yaml_data: list) -> list:
             Benchmark(yaml_datum["name"], os.path.expanduser(yaml_datum["path"]))
         )
     return benchmarks
+
+
+def list_trackers(trackers: list) -> None:
+    """
+    List the trackers in the terminal.
+
+    Args:
+        trackers (list): Print this list of trackers.
+    """
+    for tracker in trackers:
+        print(tracker.class_name, "  ", os.path.join(tracker.full_path))
+
+
+def list_benchmarks(benchmarks: list) -> None:
+    """
+    List the benchmarks in the terminal.
+
+    Args:
+        benchmarks (list): Print this list of benchmarks.
+    """
+    for benchmark in benchmarks:
+        print(benchmark.name, "  ", benchmark.path)
