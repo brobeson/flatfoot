@@ -1,7 +1,8 @@
 trackers:
   - class: Tmft
-    path: ~/repositories/tmft/tracking/tmft.py
+    path: ~/repositories/tmft/tmft.py
 
 benchmarks:
   - name: OTB
     path: ~/Videos/otb
+    versions: tb100

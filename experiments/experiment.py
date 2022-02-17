@@ -119,9 +119,8 @@ def main(arguments: argparse.Namespace) -> None:
         arguments.list_trackers, arguments.list_benchmarks, config
     )
     _import_tracker(config, arguments.tracker)
-    return
-    experiment = _make_experiment(arguments)
-    _run_tracker(experiment, arguments.tracker_name, arguments.slack_file)
+    experiments = _make_experiments(config.benchmarks)
+    # _run_tracker(experiments, arguments.tracker_name, arguments.slack_file)
 
 
 def _load_configuration(user_file: str) -> configuration.Configuration:
@@ -178,68 +177,45 @@ def _import_tracker(
         sys.exit(1)
 
 
-class _Got10kMdnet(got10k.trackers.Tracker):
-    """
-    A wrapper class so the GOT-10k tool can run MDNet.
+# class _ConsoleReporter:
+#     """
+#     An alternative to :py:class`experiments.slack_reporter.SlackReporter`. This reporter prints
+#     messages to the console.
+#     """
 
-    Attributes:
-        tracker (tracking.mdnet.Mdnet): The actual MDNet tracker.
-        name (str): The tracker's name. It is used in the reports and results output.
+#     def send_message(self, message: str) -> None:  # pylint: disable=no-self-use
+#         """
+#         Print a message to the console.
 
-    TODO:
-        Remove this class. It should be the responsibility of the tracker module.
-    """
-
-    def __init__(self, tracker, name: str) -> None:
-        super().__init__(name=name, is_deterministic="random_seed" in tracker.opts)
-        self.tracker = tracker
-
-    def init(self, image, box):
-        self.tracker.initialize(image, box)
-
-    def update(self, image):
-        return self.tracker.find_target(image)
+#         Args:
+#             message (str): This is not used in the method.
+#         """
+#         print(message)
 
 
-class _ConsoleReporter:
-    """
-    An alternative to :py:class`experiments.slack_reporter.SlackReporter`. This reporter prints
-    messages to the console.
-    """
+# def _make_notifier(
+#     configuration_file: str, source: str
+# ) -> Union[_ConsoleReporter, slack_reporter.SlackReporter]:
+#     """
+#     Make an appropriate notifier object.
 
-    def send_message(self, message: str) -> None:  # pylint: disable=no-self-use
-        """
-        Print a message to the console.
+#     Args:
+#         configuration_file (str | None): The path to the Slack configuration file.
+#         source (str): The source to use for Slack reporting.
 
-        Args:
-            message (str): This is not used in the method.
-        """
-        print(message)
-
-
-def _make_notifier(
-    configuration_file: str, source: str
-) -> Union[_ConsoleReporter, slack_reporter.SlackReporter]:
-    """
-    Make an appropriate notifier object.
-
-    Args:
-        configuration_file (str | None): The path to the Slack configuration file.
-        source (str): The source to use for Slack reporting.
-
-    Returns:
-        slack_reporter.SlackReporter | ConsoleReporter: If the function can load the
-        ``configuration_file``, the function returns a :py:class:`slack_reporter.SlackReporter`
-        object. Otherwise, the function returns a :py:class:`ConsoleReporter` object.
-    """
-    if configuration_file is not None and os.path.isfile(configuration_file):
-        return slack_reporter.SlackReporter(
-            source, **slack_reporter.read_slack_configuration(configuration_file)
-        )
-    return _ConsoleReporter()
+#     Returns:
+#         slack_reporter.SlackReporter | ConsoleReporter: If the function can load the
+#         ``configuration_file``, the function returns a :py:class:`slack_reporter.SlackReporter`
+#         object. Otherwise, the function returns a :py:class:`ConsoleReporter` object.
+#     """
+#     if configuration_file is not None and os.path.isfile(configuration_file):
+#         return slack_reporter.SlackReporter(
+#             source, **slack_reporter.read_slack_configuration(configuration_file)
+#         )
+#     return _ConsoleReporter()
 
 
-def _make_experiment(experiment_configuration: argparse.Namespace):
+def _make_experiments(benchmarks: list) -> list:
     """
     Create the GOT-10k experiment to run.
 
@@ -250,29 +226,32 @@ def _make_experiment(experiment_configuration: argparse.Namespace):
     Returns:
         The GOT-10k experiment to run.
     """
-    if experiment_configuration.benchmark in OTB_VERSIONS:
-        return got10k.experiments.ExperimentOTB(
-            experiment_configuration.dataset_dir,
-            experiment_configuration.benchmark,
-            result_dir=experiment_configuration.results_dir,
-        )
-    if experiment_configuration.benchmark in VOT_VERSIONS:
-        return got10k.experiments.ExperimentVOT(
-            experiment_configuration.dataset_dir,
-            int(experiment_configuration.benchmark),
-            read_image=True,
-            experiments="supervised",
-            result_dir=experiment_configuration.results_dir,
-        )
-    if experiment_configuration.benchmark in UAV_VERSIONS:
-        return got10k.experiments.ExperimentUAV123(
-            experiment_configuration.dataset_dir,
-            experiment_configuration.benchmark.upper(),
-            experiment_configuration.results_dir,
-        )
-    raise ValueError(
-        f"Experiment version '{experiment_configuration.benchmark}' is unknown."
-    )
+    # TODO Allow the user to specify which benchmark to use.
+    # TODO Allow the user to specify which version of the benchmark to use.
+    # TODO Allow the user to specify the results directory.
+    # TODO Allow the user to specify experiment details, such as the VOT experiment type.
+    experiments = []
+    for benchmark in benchmarks:
+        benchmark_name = benchmark.name.lower()
+        if benchmark_name == "otb":
+            for version in benchmark.versions:
+                experiments.append(
+                    got10k.experiments.ExperimentOTB(benchmark.path, version=version)
+                )
+        elif benchmark_name == "vot":
+            for version in benchmark.versions:
+                experiments.append(
+                    got10k.experiments.ExperimentVOT(benchmark.path, version=version)
+                )
+        elif benchmark_name == "uav":
+            for version in benchmark.versions:
+                experiments.append(
+                    got10k.experiments.ExperimentUAV123(benchmark.path, version=version)
+                )
+        else:
+            command_line.print_error("Unknown benchmark:", benchmark.name)
+            sys.exit(1)
+    return experiments
 
 
 def _run_tracker(experiment, tracker_name: str, slack_file: str) -> None:
@@ -285,7 +264,7 @@ def _run_tracker(experiment, tracker_name: str, slack_file: str) -> None:
         slack_file (str | None): The Slack configuration file. If this is ``None``, console
             notifications are used.
     """
-    notifier = _make_notifier(slack_file, sys.platform)
+    # notifier = _make_notifier(slack_file, sys.platform)
     # tracker = _Got10kMdnet(
     #     tracking.mdnet.Mdnet(
     #         tracking.mdnet.read_configuration(
@@ -294,10 +273,10 @@ def _run_tracker(experiment, tracker_name: str, slack_file: str) -> None:
     #     ),
     #     name=tracker_name,
     # )
-    notifier.send_message(
-        f"Starting {tracker_name} {str(experiment.dataset.version)} experiment at "
-        f"{datetime.datetime.today().isoformat(sep=' ', timespec='minutes')}"
-    )
+    # notifier.send_message(
+    #     f"Starting {tracker_name} {str(experiment.dataset.version)} experiment at "
+    #     f"{datetime.datetime.today().isoformat(sep=' ', timespec='minutes')}"
+    # )
     # try:
     #     experiment.run(tracker)
     # except Exception as error:  # pylint: disable=broad-except

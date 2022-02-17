@@ -5,9 +5,13 @@ import yaml
 
 
 class Benchmark:
-    def __init__(self, name: str, path: str) -> None:
+    def __init__(self, name: str, path: str, versions: list) -> None:
         self.name = name
         self.path = path
+        if isinstance(versions, list):
+            self.versions = versions
+        else:
+            self.versions = [versions]
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, str):
@@ -95,7 +99,11 @@ def _parse_benchmarks_from_yaml(yaml_data: list) -> list:
     benchmarks = []
     for yaml_datum in yaml_data:
         benchmarks.append(
-            Benchmark(yaml_datum["name"], os.path.expanduser(yaml_datum["path"]))
+            Benchmark(
+                yaml_datum["name"],
+                os.path.expanduser(yaml_datum["path"]),
+                yaml_datum["versions"],
+            )
         )
     return benchmarks
 
@@ -119,4 +127,4 @@ def list_benchmarks(benchmarks: list) -> None:
         benchmarks (list): Print this list of benchmarks.
     """
     for benchmark in benchmarks:
-        print(benchmark.name, "  ", benchmark.path)
+        print(benchmark.name, "  ", benchmark.path, "  ", benchmark.versions)
