@@ -39,6 +39,8 @@ class Configuration:
     def __init__(self) -> None:
         self.trackers = []
         self.benchmarks = []
+        self.results_dir = os.path.abspath("reports")
+        self.report_dir = os.path.abspath("reports")
 
     def tracker(self, name: str) -> Tracker:
         return self.trackers[self.trackers.index(name)]
@@ -73,7 +75,15 @@ def load_configuration(user_file: str) -> Configuration:
     config = Configuration()
     config.trackers = _parse_trackers_from_yaml(configuration_data["trackers"])
     config.benchmarks = _parse_benchmarks_from_yaml(configuration_data["benchmarks"])
+    if "results_dir" in configuration_data:
+        config.results_dir = _sanitize_path(configuration_data["results_dir"])
+    if "report_dir" in configuration_data:
+        config.report_dir = _sanitize_path(configuration_data["report_dir"])
     return config
+
+
+def _sanitize_path(path: str) -> str:
+    return os.path.abspath(os.path.expanduser(path))
 
 
 def _find_default_configuration_file() -> str:

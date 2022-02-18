@@ -9,6 +9,13 @@ it finds. You can specify a particular configuration file on the command line.
 
 The tracker configuration requires two root items: `trackers` and `benchmarks`.
 
+Table 1 — Optional Configuration Settings
+
+| Setting | Type | Default | Description |
+|:---|:---|:---|:---|
+| `results_dir` | string | results | The path for reading and writing tracking experiment results. |
+| `report_dir` | string | reports | The path for writing tracking experiment reports. |
+
 ### trackers
 
 The `trackers` option holds a list of trackers. Each tracker is a YAML object
@@ -46,4 +53,5 @@ benchmarks:
     path: ~/Videos/vot
   - name: UAV
     path: ~/Videos/uav
+report_dir: ~/Documents/phd/dissertation/plots
 ```
