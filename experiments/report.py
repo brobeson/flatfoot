@@ -48,6 +48,7 @@ import glob
 import json
 import os.path
 import got10k.experiments
+import configuration
 import experiments.command_line as command_line
 import experiments.table as table
 
@@ -75,29 +76,30 @@ def fill_command_line_parser(
     )
     parser.formatter_class = argparse.ArgumentDefaultsHelpFormatter
     parser.set_defaults(func=main)
-    action = command_line.add_tracker_parameter(parser)
-    action.help = (
-        "Label the reports with this tracker. Write benchmark reports to this tracker "
-        "subdirectory. Also, use these reports to create the summary table."
-    )
-    parser.add_argument(
-        "--report-dir",
-        help="Write reports to this directory.",
-        default=os.path.abspath("./reports"),
-        action=command_line.PathSanitizer,
-    )
-    parser.add_argument(
-        "--transpose-tables",
-        help="Transpose summary tables before writing them.",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--summary-format",
-        help="Write summary tables in this format.",
-        choices=["csv", "tex"],
-        default="tex",
-    )
-    command_line.add_results_dir_parameter(parser)
+    command_line.add_configuration_parameter(parser)
+    # action = command_line.add_tracker_parameter(parser)
+    # action.help = (
+    #     "Label the reports with this tracker. Write benchmark reports to this tracker "
+    #     "subdirectory. Also, use these reports to create the summary table."
+    # )
+    # parser.add_argument(
+    #     "--report-dir",
+    #     help="Write reports to this directory.",
+    #     default=os.path.abspath("./reports"),
+    #     action=command_line.PathSanitizer,
+    # )
+    # parser.add_argument(
+    #     "--transpose-tables",
+    #     help="Transpose summary tables before writing them.",
+    #     action="store_true",
+    # )
+    # parser.add_argument(
+    #     "--summary-format",
+    #     help="Write summary tables in this format.",
+    #     choices=["csv", "tex"],
+    #     default="tex",
+    # )
+    # command_line.add_results_dir_parameter(parser)
     return parser
 
 
@@ -113,8 +115,9 @@ def main(arguments: argparse.Namespace) -> None:
         arguments (argparse.Namespace): The parsed command line arguments. The ``arguments`` must
             have these attributes: ``results_dir`` and ``report_dir``.
     """
-    _print_experiment_reports(arguments)
-    _print_pilot_study_report(arguments)
+    config = configuration.load_configuration(arguments.configuration)
+    _print_experiment_reports(config)
+    # _print_pilot_study_report(arguments)
 
 
 def _today_label() -> str:
@@ -125,103 +128,103 @@ def _today_label() -> str:
 # ==================================================================================================
 # Experiment Reports
 # ==================================================================================================
-def _print_experiment_reports(command_arguments: argparse.Namespace) -> None:
+def _print_experiment_reports(config: configuration.Configuration) -> None:
     """
     Create reports for all the experiments in the results directory.
 
     Args:
         command_arguments (argparse.Namespace): The command line arguments specified by the user.
     """
-    benchmarks = _find_benchmarks(command_arguments.results_dir)
+    benchmarks = _find_benchmark_results(config.results_dir)
     if not benchmarks:
         return
-    overlap_scores = {}
-    robustness_scores = {}
+    # overlap_scores = {}
+    # robustness_scores = {}
     for benchmark in benchmarks:
         _generate_experiment_report(
-            command_arguments.results_dir,
-            command_arguments.report_dir,
-            benchmark,
-            command_arguments.tracker_name,
+            result_dir=config.results_dir,
+            report_dir=config.report_dir,
+            benchmark=benchmark,
+            primary_tracker=config.primary_tracker,
         )
-        try:
-            benchmark_overlaps, benchmark_robustess = _load_benchmark_overlap_success(
-                command_arguments.report_dir, benchmark, command_arguments.tracker_name
-            )
-            overlap_scores.update(benchmark_overlaps)
-            if benchmark_robustess is not None:
-                robustness_scores.update(benchmark_robustess)
-        except OSError as error:
-            command_line.print_warning(error)
-    data = _make_experiment_data_table(
-        overlap_scores, "Overlap Success", _today_label() + "_overlap_success"
-    )
-    data.format_spec.transpose = command_arguments.transpose_tables
-    table.write_table(
-        data,
-        os.path.join(
-            command_arguments.report_dir,
-            f"experiment_summary.{command_arguments.summary_format}",
-        ),
-    )
-    if robustness_scores:
-        data = _make_experiment_data_table(
-            robustness_scores, "VOT Robustness", _today_label() + "_vot_robustness"
-        )
-        data.format_spec.transpose = command_arguments.transpose_tables
-        table.write_table(
-            data,
-            os.path.join(
-                command_arguments.report_dir,
-                f"vot_robustness.{command_arguments.summary_format}",
-            ),
-        )
+    #     try:
+    #         benchmark_overlaps, benchmark_robustess = _load_benchmark_overlap_success(
+    #             command_arguments.report_dir, benchmark, command_arguments.tracker_name
+    #         )
+    #         overlap_scores.update(benchmark_overlaps)
+    #         if benchmark_robustess is not None:
+    #             robustness_scores.update(benchmark_robustess)
+    #     except OSError as error:
+    #         command_line.print_warning(error)
+    # data = _make_experiment_data_table(
+    #     overlap_scores, "Overlap Success", _today_label() + "_overlap_success"
+    # )
+    # data.format_spec.transpose = command_arguments.transpose_tables
+    # table.write_table(
+    #     data,
+    #     os.path.join(
+    #         command_arguments.report_dir,
+    #         f"experiment_summary.{command_arguments.summary_format}",
+    #     ),
+    # )
+    # if robustness_scores:
+    #     data = _make_experiment_data_table(
+    #         robustness_scores, "VOT Robustness", _today_label() + "_vot_robustness"
+    #     )
+    #     data.format_spec.transpose = command_arguments.transpose_tables
+    #     table.write_table(
+    #         data,
+    #         os.path.join(
+    #             command_arguments.report_dir,
+    #             f"vot_robustness.{command_arguments.summary_format}",
+    #         ),
+    #     )
 
 
-def _make_experiment_data_table(
-    raw_data: dict, caption: str, label: str
-) -> table.DataTable:
-    """
-    Create a data table summarizing the experiment results.
+# def _make_experiment_data_table(
+#     raw_data: dict, caption: str, label: str
+# ) -> table.DataTable:
+#     """
+#     Create a data table summarizing the experiment results.
 
-    Args:
-        raw_data (dict): Create the table from this data. The keys are the row labels for the
-            table. The keys of each value are the column labels. The dict must look like this:
+#     Args:
+#         raw_data (dict): Create the table from this data. The keys are the row labels for the
+#             table. The keys of each value are the column labels. The dict must look like this:
 
-            .. code-block:: json
+#             .. code-block:: json
 
-                {
-                    "row1": {
-                        "column1": 0.0,
-                        "column2": 0.0
-                    },
-                    "row2": {
-                        "column1": 0.0,
-                        "column2": 0.0
-                    }
-                }
+#                 {
+#                     "row1": {
+#                         "column1": 0.0,
+#                         "column2": 0.0
+#                     },
+#                     "row2": {
+#                         "column1": 0.0,
+#                         "column2": 0.0
+#                     }
+#                 }
 
-        caption (str): The caption for the data table output.
-        label (str): The cross reference label for the table output.
+#         caption (str): The caption for the data table output.
+#         label (str): The cross reference label for the table output.
 
-    Returns:
-        table.DataTable: A data in a table ready for output.
-    """
-    row_labels = list(raw_data.keys())
-    column_labels = list(raw_data[row_labels[0]].keys())
-    data = table.DataTable(row_labels, column_labels)
-    data.row_labels = row_labels
-    data.column_labels = column_labels
-    data.caption = caption
-    data.label = label
-    for row_index, row_label in enumerate(data.row_labels):
-        for column_index, column_label in enumerate(data.column_labels):
-            if column_label in raw_data[row_label]:
-                data[row_index, column_index] = raw_data[row_label][column_label]
-    return data
+#     Returns:
+#         table.DataTable: A data in a table ready for output.
+#     """
+#     row_labels = list(raw_data.keys())
+#     column_labels = list(raw_data[row_labels[0]].keys())
+#     data = table.DataTable(row_labels, column_labels)
+#     data.row_labels = row_labels
+#     data.column_labels = column_labels
+#     data.caption = caption
+#     data.label = label
+#     for row_index, row_label in enumerate(data.row_labels):
+#         for column_index, column_label in enumerate(data.column_labels):
+#             if column_label in raw_data[row_label]:
+#                 data[row_index, column_index] = raw_data[row_label][column_label]
+#     return data
 
 
-def _find_benchmarks(results_dir: str) -> list:
+def _find_benchmark_results(results_dir: str) -> list:
     """
     Find the benchmarks in the experiment results directory.
 
@@ -232,22 +235,22 @@ def _find_benchmarks(results_dir: str) -> list:
     Returns:
         list: The list of benchmarks in the experiment results.
     """
-    command_line.print_information("Searching", results_dir, "for benchmarks.")
+    command_line.print_information("Looking for tracking results in", results_dir)
     benchmarks = [
         os.path.basename(benchmark)
         for benchmark in glob.glob(os.path.join(results_dir, "*"))
         if os.path.basename(benchmark)[0:3] in ["OTB", "UAV", "VOT"]
     ]
     if not benchmarks:
-        command_line.print_warning("No benchmarks found.")
+        command_line.print_warning("No benchmark results found.")
         return None
     benchmarks.sort()
-    command_line.print_information("Found {}".format(", ".join(benchmarks)))
+    command_line.print_information("Found results for {}".format(", ".join(benchmarks)))
     return benchmarks
 
 
 def _generate_experiment_report(
-    result_dir: str, report_dir: str, benchmark: str, tracker_name: str
+    result_dir: str, report_dir: str, benchmark: str, primary_tracker: str
 ) -> None:
     """
     Generate a report for a benchmark.
@@ -267,7 +270,7 @@ def _generate_experiment_report(
         command_line.print_warning(str(error))
         return
     try:
-        trackers = _find_trackers(os.path.join(result_dir, benchmark), tracker_name)
+        trackers = _find_trackers(os.path.join(result_dir, benchmark), primary_tracker)
         experiment.report(trackers)
     except RuntimeError as error:
         command_line.print_warning(error)
@@ -310,32 +313,34 @@ def _make_experiment(result_dir: str, report_dir: str, benchmark: str):
     raise RuntimeError(f"Unknown benchmark {benchmark}.")
 
 
-def _find_trackers(result_dir: str, tracker_name: str) -> list:
+def _find_trackers(result_dir: str, primary_tracker: str) -> list:
     """
     Get the trackers available for an experiment benchmark.
 
     Args:
         results (str): The path to the benchmark results.
-        tracker_name (str): Use this tracker as the primary tracker in the report. This tracker
+        primary_tracker (str): Use this tracker as the primary tracker in the report. This tracker
             is first in the list of found trackers. If this tracker is not in the found trackers,
             this function raises a :py:class:`RuntimeError`.
 
     Returns:
         list: The list of trackers found in the benchmark result directory.
-
-    Raises:
-        RuntimeError: This is raised if the ``tracker_name`` is not in the found trackers.
     """
+    command_line.print_information("Looking for trackers in", result_dir)
     trackers = [
         os.path.basename(tracker)
         for tracker in glob.glob(os.path.join(result_dir, "*"))
     ]
-    if tracker_name in trackers:
-        trackers.remove(tracker_name)
-        trackers.sort()
-        trackers.insert(0, tracker_name)
-        return trackers
-    raise RuntimeError(f"{tracker_name} not found.")
+    command_line.print_information(f"Found {', '.join(trackers)}")
+    if primary_tracker:
+        if primary_tracker in trackers:
+            trackers.remove(primary_tracker)
+            trackers.insert(0, primary_tracker)
+        else:
+            command_line.print_warning(
+                "Primary tracker", primary_tracker, "not found; using", trackers[0]
+            )
+    return trackers
 
 
 def _load_benchmark_overlap_success(
