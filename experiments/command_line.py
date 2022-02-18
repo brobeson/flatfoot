@@ -5,6 +5,7 @@ line.
 
 import argparse
 import os.path
+import sys
 
 
 class PathSanitizer(argparse.Action):
@@ -192,6 +193,17 @@ def print_error(*objects) -> None:
         objects: The data to print as a warning.
     """
     _print_message("\033[91m", *objects)
+
+
+def print_error_and_exit(*objects) -> None:
+    """
+    Print an error message to the terminal using red text, then exit with non-zero status.
+
+    Args:
+        objects: The data to print as a warning.
+    """
+    print_error(*objects)
+    sys.exit(1)
 
 
 def _print_message(color: str, *objects) -> None:
