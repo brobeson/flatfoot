@@ -13,6 +13,7 @@ Table 1 — Optional Configuration Settings
 
 | Setting | Type | Default | Description |
 |:---|:---|:---|:---|
+| `primary_tracker` | string | `null` | Use this tracker as the primary tracker for reports. Flatfoot writes reports to a subdirectory with this value. If the primary tracker is `null`, flatfoot uses the first tracker it finds within the benchmark's results. |
 | `results_dir` | string | results | The path for reading and writing tracking experiment results. |
 | `report_dir` | string | reports | The path for writing tracking experiment reports. |
 

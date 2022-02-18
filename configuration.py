@@ -2,10 +2,25 @@
 
 import os.path
 import yaml
+import experiments.command_line as command_line
 
 
 class Benchmark:
-    def __init__(self, name: str, path: str, versions: list) -> None:
+    """
+    Encapsulates meta-data about a single-object tracking benchmark.
+
+    A benchmark is a collection of datasets and evaluation protocols. An example is OTB. It has two
+    datasets: TB-50 and TB-100, and two evaluation protocols: overlap success and precision.
+
+    Attributes:
+        name (str): This is the name of the benchmark. Examples include OTB, UAV, and VOT.
+        path (str): This is the root path to the benchmark datasets. The flatfoot tool will find the
+            benchmark's datasets in this directory.
+        versions (list): These are the datasets or versions available for the benchmark. Examples
+            ``tb50`` and ``tb100`` for the OTB benchmark, and ``2019`` for the VOT benchmark.
+    """
+
+    def __init__(self, name: str, path: str, versions) -> None:
         self.name = name
         self.path = path
         if isinstance(versions, list):
@@ -39,8 +54,9 @@ class Configuration:
     def __init__(self) -> None:
         self.trackers = []
         self.benchmarks = []
-        self.results_dir = os.path.abspath("reports")
+        self.results_dir = os.path.abspath("results")
         self.report_dir = os.path.abspath("reports")
+        self.primary_tracker = None
 
     def tracker(self, name: str) -> Tracker:
         return self.trackers[self.trackers.index(name)]
@@ -53,6 +69,9 @@ def load_configuration(user_file: str) -> Configuration:
     """
     Search for and load the flatfoot configuration file.
 
+    If an error occurs during loading, the function prints an error message to the terminal, then
+    exits.
+
     Args:
         user_file (str): Load this configuration file as requested by the user. If this is ``None``,
             flatfoot searches for the default options. If this file is not ``None`` and does not
@@ -61,13 +80,18 @@ def load_configuration(user_file: str) -> Configuration:
     Returns:
         Configuration: This function returns the configuration read from the specified
         ``user_file``, or one of the default files.
-
-    Raises:
-        FileNotFoundError: This function raises a :py:exception:`FileNotFoundError` if it cannot
-            find a configuration file.
-        KeyError: This function raises a :py:exception:`KeyError` if required keys are in the
-            configuration file.
     """
+    try:
+        return _try_load_configuration(user_file)
+    except FileNotFoundError as error:
+        command_line.print_error_and_exit(error.strerror, "-", error.filename)
+    except KeyError as error:
+        command_line.print_error_and_exit(
+            "The required key", error.args[0], "is missing from the configuration."
+        )
+
+
+def _try_load_configuration(user_file: str) -> Configuration:
     if not user_file:
         user_file = _find_default_configuration_file()
     with open(user_file, "r") as configuration_file:
@@ -79,6 +103,8 @@ def load_configuration(user_file: str) -> Configuration:
         config.results_dir = _sanitize_path(configuration_data["results_dir"])
     if "report_dir" in configuration_data:
         config.report_dir = _sanitize_path(configuration_data["report_dir"])
+    if "primary_tracker" in configuration_data:
+        config.primary_tracker = configuration_data["primary_tracker"]
     return config
 
 
