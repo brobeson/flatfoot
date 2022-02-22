@@ -77,29 +77,8 @@ def fill_command_line_parser(
     parser.formatter_class = argparse.ArgumentDefaultsHelpFormatter
     parser.set_defaults(func=main)
     command_line.add_configuration_parameter(parser)
-    # action = command_line.add_tracker_parameter(parser)
-    # action.help = (
-    #     "Label the reports with this tracker. Write benchmark reports to this tracker "
-    #     "subdirectory. Also, use these reports to create the summary table."
-    # )
-    # parser.add_argument(
-    #     "--report-dir",
-    #     help="Write reports to this directory.",
-    #     default=os.path.abspath("./reports"),
-    #     action=command_line.PathSanitizer,
-    # )
-    # parser.add_argument(
-    #     "--transpose-tables",
-    #     help="Transpose summary tables before writing them.",
-    #     action="store_true",
-    # )
-    # parser.add_argument(
-    #     "--summary-format",
-    #     help="Write summary tables in this format.",
-    #     choices=["csv", "tex"],
-    #     default="tex",
-    # )
-    # command_line.add_results_dir_parameter(parser)
+    # TODO Add transpose-tables to the configuration
+    # TODO Add summary-format to the configuration
     return parser
 
 
@@ -117,7 +96,6 @@ def main(arguments: argparse.Namespace) -> None:
     """
     config = configuration.load_configuration(arguments.configuration)
     _print_experiment_reports(config)
-    # _print_pilot_study_report(arguments)
 
 
 def _today_label() -> str:
