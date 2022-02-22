@@ -51,6 +51,7 @@ import got10k.experiments
 import configuration
 import experiments.command_line as command_line
 import experiments.table as table
+import sequence_plots
 
 
 def fill_command_line_parser(
@@ -94,6 +95,8 @@ def main(arguments: argparse.Namespace) -> None:
         arguments (argparse.Namespace): The parsed command line arguments. The ``arguments`` must
             have these attributes: ``results_dir`` and ``report_dir``.
     """
+    sequence_plots.generate_sequence_plot("reports/OTBtb100/TMFT/performance.json")
+    return
     config = configuration.load_configuration(arguments.configuration)
     _print_experiment_reports(config)
 
