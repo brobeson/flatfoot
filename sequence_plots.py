@@ -34,7 +34,7 @@ def sequence_diff_plot(results_dir: str, sequence: str, trackers: list) -> None:
         ),
         ground_truth,
     )
-    _plot_frame_stems(baseline_ious, experimental_ious, trackers)
+    _plot_frame_stems(baseline_ious, experimental_ious, trackers, sequence)
 
 
 def _load_performance_data(performance_file_path: str, trackers: list = None) -> dict:
@@ -64,7 +64,8 @@ def _plot_stems(data: dict, trackers: list) -> None:
     matplotlib.pyplot.xlabel("Sequence")
     matplotlib.pyplot.xticks(rotation=-90)
     matplotlib.pyplot.ylabel("Δ Overlap Success")
-    matplotlib.pyplot.title(f"Δ Overlap Success per Sequence")
+    matplotlib.pyplot.title("Δ Overlap Success per Sequence — OTB-100")
+    matplotlib.pyplot.margins(x=0.01)
     matplotlib.pyplot.grid(axis="x")
     baseline_tracker = trackers[0]
     experiment_tracker = trackers[1]
@@ -83,13 +84,22 @@ def _plot_stems(data: dict, trackers: list) -> None:
 
 
 def _plot_frame_stems(
-    baseline: numpy.ndarray, experimental: numpy.ndarray, trackers
+    baseline: numpy.ndarray, experimental: numpy.ndarray, trackers, sequence: str
 ) -> None:
     matplotlib.pyplot.cla()
     matplotlib.pyplot.xlabel("Frame")
-    matplotlib.pyplot.ylabel("Delta Mean Overlap Success")
-    matplotlib.pyplot.title(f"Delta Mean Overlap Success: {trackers[1]}-{trackers[0]}")
+    matplotlib.pyplot.ylabel("Δ Overlap Success")
+    matplotlib.pyplot.title(f"Δ Overlap Success per Frame — {sequence} Sequence")
+    matplotlib.pyplot.margins(x=0.01)
     matplotlib.pyplot.grid(axis="x")
-    matplotlib.pyplot.stem(range(len(baseline)), experimental - baseline)
-    matplotlib.pyplot.xticks(ticks=range(0, len(baseline), 10), rotation=-90)
+    deltas = experimental - baseline
+    matplotlib.pyplot.stem(
+        range(1, baseline.size + 1), deltas, label=f"{trackers[1]} - {trackers[0]}"
+    )
+    matplotlib.pyplot.xticks(ticks=range(1, baseline.size + 1, 10), rotation=-90)
+    mean = numpy.mean(deltas)
+    matplotlib.pyplot.hlines(
+        mean, 1, baseline.size, label=f"Mean Δ = {mean:.3f}", color="orange"
+    )
+    matplotlib.pyplot.legend()
     matplotlib.pyplot.show()

@@ -7,3 +7,4 @@ benchmarks:
     path: ~/Videos/otb
     versions: tb100
 primary_tracker: Distance
+results_dir: ~/repositories/py-MDNet/results

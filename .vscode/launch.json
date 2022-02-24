@@ -8,8 +8,10 @@
       "args": [
         "report",
         "--trackers",
-        "TMFT",
-        "CB"
+        "MDNet",
+        "CB",
+        "--sequence",
+        "Walking2"
       ]
     }
   ]
