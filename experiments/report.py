@@ -99,10 +99,12 @@ def main(arguments: argparse.Namespace) -> None:
     """
     config = configuration.load_configuration(arguments.configuration)
     if arguments.sequence:
-        sequence_plots.sequence_diff_plot(arguments.sequence, arguments.trackers)
+        sequence_plots.sequence_diff_plot(
+            config.results_dir, arguments.sequence, arguments.trackers
+        )
     else:
         sequence_plots.tracker_diff_plot(
-            "reports/OTBtb100/TMFT/performance.json", arguments.trackers
+            "reports/OTBtb100/MDNet/performance.json", arguments.trackers
         )
     return
     _print_experiment_reports(config)
