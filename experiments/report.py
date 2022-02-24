@@ -81,6 +81,7 @@ def fill_command_line_parser(
     # TODO Add transpose-tables to the configuration
     # TODO Add summary-format to the configuration
     parser.add_argument("--trackers", help="Only plot these trackers.", nargs="+")
+    parser.add_argument("--sequence", help="Display per-frame plots for this sequence.")
     return parser
 
 
@@ -96,11 +97,14 @@ def main(arguments: argparse.Namespace) -> None:
         arguments (argparse.Namespace): The parsed command line arguments. The ``arguments`` must
             have these attributes: ``results_dir`` and ``report_dir``.
     """
-    sequence_plots.generate_sequence_plot(
-        "reports/OTBtb100/TMFT/performance.json", arguments.trackers
-    )
-    return
     config = configuration.load_configuration(arguments.configuration)
+    if arguments.sequence:
+        sequence_plots.sequence_diff_plot(arguments.sequence, arguments.trackers)
+    else:
+        sequence_plots.tracker_diff_plot(
+            "reports/OTBtb100/TMFT/performance.json", arguments.trackers
+        )
+    return
     _print_experiment_reports(config)
 
 

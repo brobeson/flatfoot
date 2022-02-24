@@ -1,13 +1,40 @@
 """Generate a plot of mean overlap success for each sequence in a dataset."""
 
 import json
+import os.path
 import matplotlib.pyplot
+import numpy
+import got10k.experiments
 
 
-def generate_sequence_plot(performance_file: str, trackers: list = None) -> None:
+def tracker_diff_plot(performance_file: str, trackers: list = None) -> None:
     data = _load_performance_data(performance_file, trackers)
     # _plot_sequence_data(data)
     _plot_stems(data, trackers)
+
+
+def sequence_diff_plot(sequence: str, trackers: list) -> None:
+    experiment = got10k.experiments.ExperimentOTB(
+        os.path.expanduser("~/Videos/otb"),
+        version="tb100",
+        result_dir=os.path.expanduser("~/repositories/tmft/results"),
+    )
+    _, ground_truth = experiment.dataset[sequence]
+    baseline_ious, _ = experiment._calc_metrics(
+        numpy.loadtxt(
+            os.path.join(experiment.result_dir, trackers[0], f"{sequence}.txt"),
+            delimiter=",",
+        ),
+        ground_truth,
+    )
+    experimental_ious, _ = experiment._calc_metrics(
+        numpy.loadtxt(
+            os.path.join(experiment.result_dir, trackers[1], f"{sequence}.txt"),
+            delimiter=",",
+        ),
+        ground_truth,
+    )
+    _plot_frame_stems(baseline_ious, experimental_ious, trackers)
 
 
 def _load_performance_data(performance_file_path: str, trackers: list = None) -> dict:
@@ -56,8 +83,21 @@ def _plot_stems(data: dict, trackers: list) -> None:
         data[experiment_tracker][sequence] - data[baseline_tracker][sequence]
         for sequence in data[baseline_tracker].keys()
     ]
-    # matplotlib.pyplot.stem(range(0, len(deltas)), deltas)
     matplotlib.pyplot.stem(data[baseline_tracker].keys(), deltas)
+    matplotlib.pyplot.legend()
+    matplotlib.pyplot.show()
+
+
+def _plot_frame_stems(
+    baseline: numpy.ndarray, experimental: numpy.ndarray, trackers
+) -> None:
+    matplotlib.pyplot.cla()
+    matplotlib.pyplot.xlabel("Frame")
+    matplotlib.pyplot.ylabel("Delta Mean Overlap Success")
+    matplotlib.pyplot.title(f"Delta Mean Overlap Success: {trackers[1]}-{trackers[0]}")
+    matplotlib.pyplot.grid(axis="x")
+    matplotlib.pyplot.stem(range(len(baseline)), experimental - baseline)
+    matplotlib.pyplot.xticks(ticks=range(0, len(baseline), 10), rotation=-90)
     matplotlib.pyplot.show()
 
 
