@@ -52,11 +52,10 @@ import configuration
 import experiments.command_line as command_line
 import experiments.table as table
 import sequence_plots
+import area_plot
 
 
-def fill_command_line_parser(
-    parser: argparse.ArgumentParser,
-) -> argparse.ArgumentParser:
+def fill_command_line_parser(parser: argparse.ArgumentParser,) -> argparse.ArgumentParser:
     """
     Create the command line parser for this module.
 
@@ -99,6 +98,7 @@ def main(arguments: argparse.Namespace) -> None:
     """
     config = configuration.load_configuration(arguments.configuration)
     if arguments.sequence:
+        area_plot.area_diff_plot(config.results_dir, arguments.sequence, arguments.trackers)
         sequence_plots.sequence_diff_plot(
             config.results_dir, arguments.sequence, arguments.trackers
         )
@@ -288,9 +288,7 @@ def _make_experiment(result_dir: str, report_dir: str, benchmark: str):
         )
     if benchmark == "UAV123":
         return got10k.experiments.ExperimentUAV123(
-            os.path.expanduser("~/Videos/uav123"),
-            result_dir=result_dir,
-            report_dir=report_dir,
+            os.path.expanduser("~/Videos/uav123"), result_dir=result_dir, report_dir=report_dir,
         )
     if benchmark[:3] == "VOT":
         return got10k.experiments.ExperimentVOT(
@@ -317,10 +315,7 @@ def _find_trackers(result_dir: str, primary_tracker: str) -> list:
         list: The list of trackers found in the benchmark result directory.
     """
     command_line.print_information("Looking for trackers in", result_dir)
-    trackers = [
-        os.path.basename(tracker)
-        for tracker in glob.glob(os.path.join(result_dir, "*"))
-    ]
+    trackers = [os.path.basename(tracker) for tracker in glob.glob(os.path.join(result_dir, "*"))]
     command_line.print_information(f"Found {', '.join(trackers)}")
     if primary_tracker:
         if primary_tracker in trackers:
@@ -333,9 +328,7 @@ def _find_trackers(result_dir: str, primary_tracker: str) -> list:
     return trackers
 
 
-def _load_benchmark_overlap_success(
-    report_dir: str, benchmark: str, tracker_name: str
-) -> tuple:
+def _load_benchmark_overlap_success(report_dir: str, benchmark: str, tracker_name: str) -> tuple:
     """
     Read overlap success data saved by the benchmark report.
 
@@ -372,14 +365,12 @@ def _load_benchmark_overlap_success(
     return (
         {
             _benchmark_to_table_entry(benchmark): {
-                tracker: tracker_data["accuracy"]
-                for tracker, tracker_data in data.items()
+                tracker: tracker_data["accuracy"] for tracker, tracker_data in data.items()
             }
         },
         {
             _benchmark_to_table_entry(benchmark): {
-                tracker: tracker_data["robustness"]
-                for tracker, tracker_data in data.items()
+                tracker: tracker_data["robustness"] for tracker, tracker_data in data.items()
             }
         },
     )
@@ -421,8 +412,7 @@ def _print_pilot_study_report(command_arguments: argparse.Namespace) -> None:
         table.write_table(
             data_table,
             os.path.join(
-                command_arguments.report_dir,
-                f"pilot_study.{command_arguments.summary_format}",
+                command_arguments.report_dir, f"pilot_study.{command_arguments.summary_format}",
             ),
         )
     except RuntimeError as error:
@@ -474,9 +464,7 @@ def _make_pilot_study_data_table(pilot_results: dict) -> table.DataTable:
     data.row_labels = sorted(list(sequences))
     for row_index, row_label in enumerate(data.row_labels):
         for column_index, column_label in enumerate(data.column_labels):
-            data[row_index, column_index] = pilot_results[column_label]["scores"][
-                row_label
-            ]
+            data[row_index, column_index] = pilot_results[column_label]["scores"][row_label]
     return data
 
 

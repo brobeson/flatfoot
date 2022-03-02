@@ -22,15 +22,13 @@ def sequence_diff_plot(results_dir: str, sequence: str, trackers: list) -> None:
     _, ground_truth = experiment.dataset[sequence]
     baseline_ious, _ = experiment._calc_metrics(
         numpy.loadtxt(
-            os.path.join(experiment.result_dir, trackers[0], f"{sequence}.txt"),
-            delimiter=",",
+            os.path.join(experiment.result_dir, trackers[0], f"{sequence}.txt"), delimiter=",",
         ),
         ground_truth,
     )
     experimental_ious, _ = experiment._calc_metrics(
         numpy.loadtxt(
-            os.path.join(experiment.result_dir, trackers[1], f"{sequence}.txt"),
-            delimiter=",",
+            os.path.join(experiment.result_dir, trackers[1], f"{sequence}.txt"), delimiter=",",
         ),
         ground_truth,
     )
@@ -96,10 +94,8 @@ def _plot_frame_stems(
     matplotlib.pyplot.stem(
         range(1, baseline.size + 1), deltas, label=f"{trackers[1]} - {trackers[0]}"
     )
-    matplotlib.pyplot.xticks(ticks=range(1, baseline.size + 1, 10), rotation=-90)
+    matplotlib.pyplot.xticks(ticks=range(0, baseline.size + 1, 10))
     mean = numpy.mean(deltas)
-    matplotlib.pyplot.hlines(
-        mean, 1, baseline.size, label=f"Mean Δ = {mean:.3f}", color="orange"
-    )
+    matplotlib.pyplot.hlines(mean, 1, baseline.size, label=f"Mean Δ = {mean:.3f}", color="orange")
     matplotlib.pyplot.legend()
     matplotlib.pyplot.show()
