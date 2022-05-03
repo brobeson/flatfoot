@@ -45,16 +45,15 @@ Reference
 
 import argparse
 import datetime
+import importlib
 import os
 import sys
 from typing import Union
 import got10k.experiments
 import got10k.trackers
+import configuration
 import experiments.command_line as command_line
 import experiments.slack_reporter as slack_reporter
-
-sys.path.append(os.path.expanduser("~/repositories/py-MDNet"))
-import tracking.mdnet
 
 OTB_VERSIONS = ["tb50", "tb100"]
 VOT_VERSIONS = ["2019"]
@@ -79,23 +78,24 @@ def fill_command_line_parser(parser: argparse.ArgumentParser) -> argparse.Namesp
     parser.description = "Run tracking experiments for a single benchmark."
     parser.formatter_class = argparse.ArgumentDefaultsHelpFormatter
     parser.set_defaults(func=main)
-    command_line.add_tracker_name_parameter(parser)
-    command_line.add_dataset_dir_parameter(parser, "~/Videos")
-    command_line.add_results_dir_parameter(parser)
-    parser.add_argument(
-        "--slack-file",
-        help="Send notifications to a Slack channel. This option specifies the path to a file with "
-        "the Slack channel information. See the documentation for the experiments.slack_reporter "
-        "module for details about the file contents.",
-        action=command_line.PathSanitizer,
-    )
-    parser.add_argument(
-        "benchmark",
-        help="Use this benchmark for the tracking experiment. 'tb50' and 'tb100' are OTB "
-        "benchmarks. '2019' is the VOT 2019 short-term benchmark. 'uav123' is the UAV123 "
-        "benchmark.",
-        choices=OTB_VERSIONS + VOT_VERSIONS + UAV_VERSIONS,
-    )
+    command_line.add_configuration_parameter(parser)
+    command_line.add_tracker_parameter(parser)
+    # command_line.add_dataset_dir_parameter(parser, "~/Videos")
+    # command_line.add_results_dir_parameter(parser)
+    # parser.add_argument(
+    #     "--slack-file",
+    #     help="Send notifications to a Slack channel. This option specifies the path to a file with "
+    #     "the Slack channel information. See the documentation for the experiments.slack_reporter "
+    #     "module for details about the file contents.",
+    #     action=command_line.PathSanitizer,
+    # )
+    # parser.add_argument(
+    #     "benchmark",
+    #     help="Use this benchmark for the tracking experiment. 'tb50' and 'tb100' are OTB "
+    #     "benchmarks. '2019' is the VOT 2019 short-term benchmark. 'uav123' is the UAV123 "
+    #     "benchmark.",
+    #     choices=OTB_VERSIONS + VOT_VERSIONS + UAV_VERSIONS,
+    # )
     return parser
 
 
@@ -112,8 +112,54 @@ def main(arguments: argparse.Namespace) -> None:
             have these attributes: ``tracker_name``, ``slack_file``, ``benchmark``, ``dataset_dir``,
             and ``results_dir``.
     """
+    config = _load_configuration(arguments.configuration)
+    _import_tracker(config, arguments.tracker)
+    return
     experiment = _make_experiment(arguments)
     _run_tracker(experiment, arguments.tracker_name, arguments.slack_file)
+
+
+def _load_configuration(user_file: str) -> configuration.Configuration:
+    try:
+        return configuration.load_configuration(user_file)
+    except FileNotFoundError as error:
+        command_line.print_error(error.strerror, "-", error.filename)
+        sys.exit(1)
+    except KeyError as error:
+        command_line.print_error(
+            "The required key", error.args[0], "is missing from the configuration."
+        )
+        sys.exit(1)
+
+
+def _import_tracker(
+    flatfoot_configuration: configuration.Configuration, requested_tracker: str
+) -> None:
+    if not flatfoot_configuration.trackers:
+        command_line.print_error(
+            "There are no trackers defined in the flatfoot configuration."
+        )
+        sys.exit(1)
+    if requested_tracker in flatfoot_configuration.trackers:
+        tracker_to_import = flatfoot_configuration.tracker(requested_tracker)
+    else:
+        if len(flatfoot_configuration.trackers) > 1:
+            command_line.print_error(
+                "You did not specify a tracker, and there are multiple trackers to select."
+            )
+            sys.exit(1)
+        else:
+            tracker_to_import = flatfoot_configuration.trackers[0]
+    sys.path.append(tracker_to_import.path)
+    try:
+        importlib.import_module(tracker_to_import.module)
+    except ModuleNotFoundError as error:
+        command_line.print_error(error.msg)
+        command_line.print_error(
+            "Ensure Python can find your tracker's modules using sys.path:"
+        )
+        command_line.print_error(sys.path)
+        sys.exit(1)
 
 
 class _Got10kMdnet(got10k.trackers.Tracker):
@@ -123,9 +169,12 @@ class _Got10kMdnet(got10k.trackers.Tracker):
     Attributes:
         tracker (tracking.mdnet.Mdnet): The actual MDNet tracker.
         name (str): The tracker's name. It is used in the reports and results output.
+
+    TODO:
+        Remove this class. It should be the responsibility of the tracker module.
     """
 
-    def __init__(self, tracker: tracking.mdnet.Mdnet, name: str) -> None:
+    def __init__(self, tracker, name: str) -> None:
         super().__init__(name=name, is_deterministic="random_seed" in tracker.opts)
         self.tracker = tracker
 
@@ -221,27 +270,27 @@ def _run_tracker(experiment, tracker_name: str, slack_file: str) -> None:
             notifications are used.
     """
     notifier = _make_notifier(slack_file, sys.platform)
-    tracker = _Got10kMdnet(
-        tracking.mdnet.Mdnet(
-            tracking.mdnet.read_configuration(
-                os.path.expanduser("~/repositories/py-MDNet/tracking/options.yaml")
-            )
-        ),
-        name=tracker_name,
-    )
+    # tracker = _Got10kMdnet(
+    #     tracking.mdnet.Mdnet(
+    #         tracking.mdnet.read_configuration(
+    #             os.path.expanduser("~/repositories/py-MDNet/tracking/options.yaml")
+    #         )
+    #     ),
+    #     name=tracker_name,
+    # )
     notifier.send_message(
         f"Starting {tracker_name} {str(experiment.dataset.version)} experiment at "
         f"{datetime.datetime.today().isoformat(sep=' ', timespec='minutes')}"
     )
-    try:
-        experiment.run(tracker)
-    except Exception as error:  # pylint: disable=broad-except
-        notifier.send_message(f"Error during experiment: '{str(error)}'")
-    else:
-        notifier.send_message(
-            "Experiment finished at "
-            + datetime.datetime.today().isoformat(sep=" ", timespec="minutes")
-        )
+    # try:
+    #     experiment.run(tracker)
+    # except Exception as error:  # pylint: disable=broad-except
+    #     notifier.send_message(f"Error during experiment: '{str(error)}'")
+    # else:
+    #     notifier.send_message(
+    #         "Experiment finished at "
+    #         + datetime.datetime.today().isoformat(sep=" ", timespec="minutes")
+    #     )
 
 
 if __name__ == "__main__":

@@ -52,7 +52,9 @@ import experiments.command_line as command_line
 import experiments.table as table
 
 
-def fill_command_line_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+def fill_command_line_parser(
+    parser: argparse.ArgumentParser,
+) -> argparse.ArgumentParser:
     """
     Create the command line parser for this module.
 
@@ -73,7 +75,7 @@ def fill_command_line_parser(parser: argparse.ArgumentParser) -> argparse.Argume
     )
     parser.formatter_class = argparse.ArgumentDefaultsHelpFormatter
     parser.set_defaults(func=main)
-    action = command_line.add_tracker_name_parameter(parser)
+    action = command_line.add_tracker_parameter(parser)
     action.help = (
         "Label the reports with this tracker. Write benchmark reports to this tracker "
         "subdirectory. Also, use these reports to create the summary table."
@@ -158,7 +160,8 @@ def _print_experiment_reports(command_arguments: argparse.Namespace) -> None:
     table.write_table(
         data,
         os.path.join(
-            command_arguments.report_dir, f"experiment_summary.{command_arguments.summary_format}"
+            command_arguments.report_dir,
+            f"experiment_summary.{command_arguments.summary_format}",
         ),
     )
     if robustness_scores:
@@ -169,12 +172,15 @@ def _print_experiment_reports(command_arguments: argparse.Namespace) -> None:
         table.write_table(
             data,
             os.path.join(
-                command_arguments.report_dir, f"vot_robustness.{command_arguments.summary_format}"
+                command_arguments.report_dir,
+                f"vot_robustness.{command_arguments.summary_format}",
             ),
         )
 
 
-def _make_experiment_data_table(raw_data: dict, caption: str, label: str) -> table.DataTable:
+def _make_experiment_data_table(
+    raw_data: dict, caption: str, label: str
+) -> table.DataTable:
     """
     Create a data table summarizing the experiment results.
 
@@ -320,7 +326,10 @@ def _find_trackers(result_dir: str, tracker_name: str) -> list:
     Raises:
         RuntimeError: This is raised if the ``tracker_name`` is not in the found trackers.
     """
-    trackers = [os.path.basename(tracker) for tracker in glob.glob(os.path.join(result_dir, "*"))]
+    trackers = [
+        os.path.basename(tracker)
+        for tracker in glob.glob(os.path.join(result_dir, "*"))
+    ]
     if tracker_name in trackers:
         trackers.remove(tracker_name)
         trackers.sort()
@@ -329,7 +338,9 @@ def _find_trackers(result_dir: str, tracker_name: str) -> list:
     raise RuntimeError(f"{tracker_name} not found.")
 
 
-def _load_benchmark_overlap_success(report_dir: str, benchmark: str, tracker_name: str) -> tuple:
+def _load_benchmark_overlap_success(
+    report_dir: str, benchmark: str, tracker_name: str
+) -> tuple:
     """
     Read overlap success data saved by the benchmark report.
 
@@ -366,12 +377,14 @@ def _load_benchmark_overlap_success(report_dir: str, benchmark: str, tracker_nam
     return (
         {
             _benchmark_to_table_entry(benchmark): {
-                tracker: tracker_data["accuracy"] for tracker, tracker_data in data.items()
+                tracker: tracker_data["accuracy"]
+                for tracker, tracker_data in data.items()
             }
         },
         {
             _benchmark_to_table_entry(benchmark): {
-                tracker: tracker_data["robustness"] for tracker, tracker_data in data.items()
+                tracker: tracker_data["robustness"]
+                for tracker, tracker_data in data.items()
             }
         },
     )
@@ -413,7 +426,8 @@ def _print_pilot_study_report(command_arguments: argparse.Namespace) -> None:
         table.write_table(
             data_table,
             os.path.join(
-                command_arguments.report_dir, f"pilot_study.{command_arguments.summary_format}"
+                command_arguments.report_dir,
+                f"pilot_study.{command_arguments.summary_format}",
             ),
         )
     except RuntimeError as error:
@@ -465,7 +479,9 @@ def _make_pilot_study_data_table(pilot_results: dict) -> table.DataTable:
     data.row_labels = sorted(list(sequences))
     for row_index, row_label in enumerate(data.row_labels):
         for column_index, column_label in enumerate(data.column_labels):
-            data[row_index, column_index] = pilot_results[column_label]["scores"][row_label]
+            data[row_index, column_index] = pilot_results[column_label]["scores"][
+                row_label
+            ]
     return data
 
 
